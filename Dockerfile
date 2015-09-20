@@ -1,12 +1,8 @@
-FROM debian:jessie
+FROM resin/rpi-raspbian
 MAINTAINER David Personette <dperson@dperson.com>
 
 # Install nginx
 RUN export DEBIAN_FRONTEND='noninteractive' && \
-    apt-key adv --keyserver pgp.mit.edu --recv-keys \
-                573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62 && \
-    /bin/echo -n "deb http://nginx.org/packages/mainline/debian/ jessie nginx" \
-                >>/etc/apt/sources.list && \
     apt-get update -qq && \
     apt-get install -qqy --no-install-recommends apache2-utils openssl nginx \
                 $(apt-get -s dist-upgrade|awk '/^Inst.*ecurity/ {print $2}') &&\
