@@ -22,7 +22,7 @@ set -o nounset                              # Treat unset variables as an error
 # Arguments:
 #   location) optional location for basic auth
 # Return: configure Basic Auth
-basic() { local loc=${1:-\\/} file=/etc/nginx/conf.d/default.conf
+basic() { local loc=${1:-\\/} file=/etc/nginx/sites-available/default
     shift
 
     grep -q '^[^#]*location '"$loc" $file ||
@@ -101,7 +101,7 @@ prod() { local file=/etc/nginx/nginx.conf
 #   none)
 # Return: configure HSTS
 hsts() { local file=/etc/nginx/conf.d/hsts.conf \
-            file2=/etc/nginx/conf.d/default.conf
+            file2=/etc/nginx/sites-available/default
     cat > $file << EOF
 # HTTP Strict Transport Security (HSTS)
 add_header Strict-Transport-Security "max-age=15768000; includeSubDomains";
@@ -125,7 +125,7 @@ EOF
 #   oldname) old name to change from (defaults to localhost)
 # Return: configure server_name
 name() { local name=$1 oldname=${2:-localhost} \
-            file=/etc/nginx/conf.d/default.conf
+            file=/etc/nginx/sites-available/default
     sed -i 's/\(^ *server_name\) '"$oldname"';/\1 '"$name"';/' $file
 }
 
@@ -133,7 +133,7 @@ name() { local name=$1 oldname=${2:-localhost} \
 # Arguments:
 #   none)
 # Return: configure SSI
-ssi() { local file=/etc/nginx/conf.d/default.conf
+ssi() { local file=/etc/nginx/sites-available/default
     sed -n '/location \/ /,/^    }/p' $file | grep -q ssi ||
         sed -i '/location \/ /,/^    }/ { /^    }/i\
 \
@@ -148,7 +148,7 @@ ssi() { local file=/etc/nginx/conf.d/default.conf
 #   destination) where to send the request
 # Return: hostname redirect added to config
 redirect() { local port=$1 hostname=$2 destination=$3 \
-            file=/etc/nginx/conf.d/default.conf
+            file=/etc/nginx/sites-available/default
     sed -n '/listen/ {N; s/\n//; p}' $file | grep -q " $port;.* $hostname;" ||
         sed -i "$(grep -n '^}' $file | cut -d: -f1 | tail -1)"'a\
 \
@@ -195,7 +195,7 @@ stapling() { local dir=/etc/nginx/ssl file=/etc/nginx/conf.d/stapling.conf
 # Arguments:
 #   timeout) how long to keep the cached files
 # Return: configured static asset caching
-static() { local timeout="${1:-30d}" file=/etc/nginx/conf.d/default.conf
+static() { local timeout="${1:-30d}" file=/etc/nginx/sites-available/default
     sed -i '/^    ## Optional: set long EXPIRES/,/^ *$/d' $file
     sed -i '/^    #error_page/i\
     ## Optional: set long EXPIRES header on static assets\
@@ -230,7 +230,7 @@ timezone() { local timezone="${1:-EST5EDT}"
 #   service) where to contact UWSGI
 #   location) URI in web server
 # Return: UWSGI added to the config file
-uwsgi() { local service=$1 location=$2 file=/etc/nginx/conf.d/default.conf
+uwsgi() { local service=$1 location=$2 file=/etc/nginx/sites-available/default
     if grep -q "location $location {" $file; then
         sed -i '/^[^#]*location '"$(sed 's|/|\\/|g'<<<$location)"' {/,/^    }/c\
     location '"$location"' {\
@@ -266,7 +266,7 @@ uwsgi() { local service=$1 location=$2 file=/etc/nginx/conf.d/default.conf
 #   service) where to contact HTTP service
 #   location) URI in web server
 # Return: proxy added to the config file
-proxy() { local service=$1 location=$2 file=/etc/nginx/conf.d/default.conf
+proxy() { local service=$1 location=$2 file=/etc/nginx/sites-available/default
     if grep -q "location $location {" $file; then
         sed -i '/^[^#]*location '"$(sed 's|/|\\/|g'<<<$location)"' {/,/^    }/c\
     location '"$location"' {\
@@ -399,11 +399,11 @@ shift $(( OPTIND - 1 ))
 [[ "${TZ:-""}" ]] && timezone $TZ
 [[ "${USWGI:-""}" ]] && eval uwsgi $(sed 's/^\|$/"/g; s/;/" "/g' <<< $UWSGI)
 [[ "${PROXY:-""}" ]] && eval proxy $(sed 's/^\|$/"/g; s/;/" "/g' <<< $PROXY)
-[[ "${USERID:-""}" =~ ^[0-9]+$ ]] && usermod -u $USERID nginx
-[[ "${GROUPID:-""}" =~ ^[0-9]+$ ]] && usermod -g $GROUPID nginx
+[[ "${USERID:-""}" =~ ^[0-9]+$ ]] && usermod -u $USERID www-data
+[[ "${GROUPID:-""}" =~ ^[0-9]+$ ]] && usermod -g $GROUPID www-data
 
 [[ -d /var/cache/nginx/cache ]] || mkdir -p /var/cache/nginx/cache
-chown -Rh nginx. /var/cache/nginx  2>&1 | grep -iv 'Read-only' || :
+chown -Rh www-data. /var/cache/nginx  2>&1 | grep -iv 'Read-only' || :
 [[ -d /etc/nginx/ssl || ${quick:-""} ]] || gencert
 [[ -e /etc/nginx/conf.d/sessions.conf ]] || ssl_sessions
 

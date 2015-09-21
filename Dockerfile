@@ -17,7 +17,7 @@ RUN export DEBIAN_FRONTEND='noninteractive' && \
     ln -sf /dev/stderr /var/log/nginx/error.log
 # Forward request and error logs to docker log collector
 
-COPY default.conf /etc/nginx/conf.d/
+COPY default.conf /etc/nginx/sites-available/default
 COPY nginx.sh /usr/bin/
 
 VOLUME ["/run", "/tmp", "/var/cache", "/var/lib", "/var/log", "/var/tmp", \
